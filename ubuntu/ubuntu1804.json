@@ -1,7 +1,11 @@
 {
+    "variables": {
+        "os_architecture": "amd64",
+        "os_version_number": "18.04.6",
+        "os_iso_checksum": "0a20ef21181a36588f8fb670cc63e8d326fa6e715b526543d300a68de389055f"
+    },
     "builders": [
         {
-            "type": "virtualbox-iso",
             "boot_command": [
                 "<esc><wait>",
                 "<esc><wait>",
@@ -29,54 +33,57 @@
             ],
             "boot_wait": "10s",
             "disk_size": 81920,
+            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
             "guest_os_type": "Ubuntu_64",
             "headless": false,
             "http_directory": "http",
             "iso_urls": [
-                "iso/ubuntu-18.04.4-server-amd64.iso",
-                "http://cdimage.ubuntu.com/ubuntu/releases/bionic/release/ubuntu-18.04.4-server-amd64.iso"
+                "iso/ubuntu-{{user `os_version_number`}}-server-{{user `os_architecture`}}.iso",
+                "https://cdimage.ubuntu.com/releases/{{user `os_version_number`}}/release/ubuntu-{{user `os_version_number`}}-server-{{user `os_architecture`}}.iso"
             ],
-            "iso_checksum_type": "sha256",
-            "iso_checksum": "e2ecdace33c939527cbc9e8d23576381c493b071107207d2040af72595f8990b",
-            "ssh_username": "vagrant",
+            "iso_checksum": "sha256:{{user `os_iso_checksum`}}",
+            "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
             "ssh_password": "vagrant",
             "ssh_port": 22,
-            "ssh_wait_timeout": "10000s",
-            "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
-            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
-            "virtualbox_version_file": ".vbox_version",
-            "vm_name": "packer-ubuntu-18.04.4-amd64",
+            "ssh_timeout": "10000s",
+            "ssh_username": "vagrant",
+            "type": "virtualbox-iso",
             "vboxmanage": [
-            [
-                "modifyvm",
-                "{{.Name}}",
-                "--memory",
-                "1024"
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--memory",
+                    "1024"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--cpus",
+                    "1"
+                ]
             ],
-            [
-                "modifyvm",
-                "{{.Name}}",
-                "--cpus",
-                "1"
-            ]
-            ]
+            "virtualbox_version_file": ".vbox_version",
+            "vm_name": "packer-ubuntu-{{user `os_version_number`}}-{{user `os_architecture`}}"
+        }
+    ],
+    "post-processors": [
+        {
+            "compression_level": "8",
+            "output": "output/ubuntu-18.04.4.box",
+            "type": "vagrant"
         }
     ],
     "provisioners": [
         {
-            "type": "shell",
+            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
             "script": "scripts/init.sh",
-            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'"
+            "type": "shell"
         },
         {
-            "type": "shell",
+            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
             "script": "scripts/cleanup.sh",
-            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'"
-        }    
-    ],
-    "post-processors": [{
-      "type": "vagrant",
-      "compression_level": "8",
-      "output": "output/ubuntu-18.04.4.box"
-    }]
-  }
+            "type": "shell"
+        }
+    ]
+}
+

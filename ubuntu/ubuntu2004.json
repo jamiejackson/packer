@@ -1,64 +1,66 @@
 {
-    "builders": [
-      {
-        "name": "ubuntu-2004",
-        "type": "virtualbox-iso",
-        "guest_os_type": "ubuntu-64",
-        "headless": false,
-  
-        "iso_url": "http://releases.ubuntu.com/20.04/ubuntu-20.04-live-server-amd64.iso",
-        "iso_checksum": "caf3fd69c77c439f162e2ba6040e9c320c4ff0d69aad1340a514319a9264df9f",
-        "iso_checksum_type": "sha256",
-  
-        "ssh_username": "vagrant",
-        "ssh_password": "vagrant",
-        "ssh_handshake_attempts": "20",
-
-        "http_directory": "http",
-        "memory": 1024,
-
-        "boot_wait": "5s",
-        "boot_command": [
-          "<enter><enter><f6><esc><wait> ",
-          "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
-          "<enter>"
-        ],
-        "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
-        "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
-        "virtualbox_version_file": ".vbox_version",
-        "vm_name": "packer-ubuntu-20.04-amd64",
-        "vboxmanage": [
+    "variables": {
+        "os_architecture": "",
+        "os_version_number": "",
+        "os_iso_checksum": ""
+    },
+  "builders": [
+    {
+      "boot_command": [
+        "<enter><enter><f6><esc><wait> ",
+        "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<enter>"
+      ],
+      "boot_wait": "5s",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "guest_os_type": "ubuntu-64",
+      "headless": false,
+      "http_directory": "http",
+      "iso_checksum": "sha256:{{user `os_iso_checksum`}}",
+      "iso_url": "https://releases.ubuntu.com/focal/ubuntu-{{user `os_version_number`}}-live-server-{{user `os_architecture`}}.iso",
+      "memory": 1024,
+      "name": "ubuntu-2004",
+      "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
+      "ssh_handshake_attempts": "20",
+      "ssh_password": "vagrant",
+      "ssh_username": "vagrant",
+      "type": "virtualbox-iso",
+      "vboxmanage": [
         [
-            "modifyvm",
-            "{{.Name}}",
-            "--memory",
-            "1024"
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "1024"
         ],
         [
-            "modifyvm",
-            "{{.Name}}",
-            "--cpus",
-            "1"
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "1"
         ]
-        ]
-      }
-    ],
-    "provisioners": [
-        {
-            "type": "shell",
-            "script": "scripts/init.sh",
-            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'"
-        },
-        {
-            "type": "shell",
-            "script": "scripts/cleanup.sh",
-            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'"
-        }    
-    ],
-    "post-processors": [{
-      "type": "vagrant",
+      ],
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "packer-ubuntu-{{user `os_version_number`}}-{{user `os_architecture`}}"
+    }
+  ],
+  "post-processors": [
+    {
       "compression_level": "8",
-      "output": "output/ubuntu-20.04.box"
-    }]
-  }
-  
+      "output": "output/ubuntu-20.04.box",
+      "type": "vagrant"
+    }
+  ],
+  "provisioners": [
+    {
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/init.sh",
+      "type": "shell"
+    },
+    {
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "scripts/cleanup.sh",
+      "type": "shell"
+    }
+  ]
+}
+
